@@ -8,8 +8,21 @@ import pygame
 import csv
 import sys
 import glob
+import argparse
 
 from pygame import mixer
+from pythonosc import osc_message_builder
+from pythonosc import udp_client
+
+class VideoPlayer:
+    def __init__(self,ip,port):
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--ip", default=ip,help="The ip of the OSC server")
+        parser.add_argument("--port", type=int, default=port,help="The port the OSC server is listening on")
+        args = parser.parse_args()
+        self.client = udp_client.SimpleUDPClient(args.ip, args.port)
+    def playVideo(self,video):
+        self.client.send_message("/play", video )
 
 class WavePlayer:
     def __init__(self):
@@ -227,23 +240,32 @@ except IOError as e1: # if port is already opened, close it and open it again an
 
 try:
 
-    path = "./audio"
-    
+    audioPath = "./audio"
+    videoPath = "./video"
+
     audios = {
-        "freeLine": [path+"/freeLine.wav",0],
-        "wrongLine": [path+"/wrongLine.wav",1],
-        }
+        "freeLine": [audioPath+"/freeLine.wav",0],
+        "wrongLine": [audioPath+"/wrongLine.wav",1],
+    }
     
+    videos = {
+        "loop": [videoPath+"/freeLine.wav",0],
+    }
+
     numbers = dict()
-    with open(path+"/numbers.csv", 'rb') as csvfile:
+    with open(audioPath+"/numbers.csv", 'rb') as csvfile:
         audiosInfo = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in audiosInfo:
-            audios.update({row[1]:[row[2]]})
             numbers.update({row[0]:row[1]})
+            audios.update({row[1]:[row[2]]})
+            if len(row) is 4:
+                videos.update({row[1]:row[3]})
 
     audioPlayer = WavePlayer()
     audioPlayer.addAudios(audios)
-
+    videoPlayer = VideoPlayer("192.168.1.3",5000)
+    videoPlayer.playVideo("Loop.mov")
+    
     while parsingData:                    # Continuous loop
         # os.system('clear')
         stamp = time.time()
