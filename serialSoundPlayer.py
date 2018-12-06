@@ -61,12 +61,13 @@ class WavePlayer:
     def addAudios(self,audios):
         print "Audios are: ", len(audios)
         print(json.dumps(audios, indent = 4))
-        pygame.mixer.set_num_channels(len(audios))
+        pygame.mixer.set_num_channels(3)
+        channel = pygame.mixer.Channel(2)
         for entry in audios.keys():
             #print "Try to add", entry,"file:", audios[entry][0] ,"in channels:", audios[entry][1]
             audio = pygame.mixer.Sound(audios[entry][0])
             audio.set_volume(1.0)
-            self.channelsInstances.update({entry:[audio,pygame.mixer.Channel(audios[entry][1])]})
+            self.channelsInstances.update({entry:[audio,channel]})
 
     def playAudio_t(self):
         print "Audio thread started"
