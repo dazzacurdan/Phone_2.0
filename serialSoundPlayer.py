@@ -6,7 +6,8 @@ import serial
 import time
 import pygame
 import csv
-import json
+import sys
+import glob
 
 from pygame import mixer
 
@@ -60,7 +61,7 @@ class WavePlayer:
     
     def addAudios(self,audios):
         print "Audios are: ", len(audios)
-        print(json.dumps(audios, indent = 4))
+        #print(json.dumps(audios, indent = 4))
         pygame.mixer.set_num_channels(3)
         channel = pygame.mixer.Channel(2)
         for entry in audios.keys():
@@ -170,6 +171,29 @@ audiosInfo = None
 ##########################################################################
 # Declare functions    
 
+def initializeArduinoComunication():
+    """ Lists serial port names
+
+        :raises EnvironmentError:
+            On unsupported or unknown platforms
+        :returns:
+            A list of the serial ports available on the system
+    """
+    if sys.platform.startswith('win'):
+        ports = ['COM%s' % (i + 1) for i in range(256)]
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        # this excludes your current terminal "/dev/tty"
+        ports = glob.glob('/dev/tty[A-Za-z]*')
+    elif sys.platform.startswith('darwin'):
+        ports = glob.glob('/dev/tty.*')
+    else:
+        raise EnvironmentError('Unsupported platform')
+
+    for port in ports:
+        if "usbmodem" in port:
+            return port
+    return None
+
 def get_arduino_response():
    global line
    global line_len
@@ -180,10 +204,17 @@ def get_arduino_response():
        line_len = len(line)
        #print 'Receiving: ', line,' size: ', line_len
 
+##########################################################################
+# Main Loop
+port = initializeArduinoComunication()
+if port is None:
+    print "Arduino is not Connected"
+    sys.exit(-1)
+else:
+    print "Arduino is connected at port:",port
 try:
-    arduino = serial.Serial('/dev/tty.usbmodem14201',9600)#,serial.PARITY_NONE,serial.STOPBITS_ONE)#,serial.EIGHTBITS,1)
+    arduino = serial.Serial(port,9600)#,serial.PARITY_NONE,serial.STOPBITS_ONE)#,serial.EIGHTBITS,1)
     parsingData = True
-
 except serial.SerialException as e0:
     print "ERROR:", e0
     arduino.close()
@@ -194,12 +225,6 @@ except IOError as e1: # if port is already opened, close it and open it again an
     arduino.open()
     print ("port was already open, was closed and opened again!")
 
-
-#time.sleep(10)    # Time for Arduino to reset and settle
-#arduino.flushInput()   
-
-##########################################################################
-# Main Loop
 try:
 
     path = "./audio"
@@ -213,7 +238,7 @@ try:
     with open(path+"/numbers.csv", 'rb') as csvfile:
         audiosInfo = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in audiosInfo:
-            audios.update({row[1]:[row[2],int(row[3])]})
+            audios.update({row[1]:[row[2]]})
             numbers.update({row[0]:row[1]})
 
     audioPlayer = WavePlayer()
@@ -247,3 +272,4 @@ except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
     arduino.close()
     audioPlayer.close()
 print "Done.\nExiting."
+sys.exit(0)
