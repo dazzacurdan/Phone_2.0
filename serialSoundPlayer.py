@@ -30,7 +30,7 @@ class WavePlayer:
         #set up the mixer
         freq = 44100     # audio CD quality
         bitsize = -16    # unsigned 16 bit
-        channels = 1     # 1 is mono, 2 is stereo
+        channels = 2     # 1 is mono, 2 is stereo
         buffer = 2048    # number of samples (experiment to get right sound)
         pygame.mixer.init(freq, bitsize, channels, buffer)
         pygame.mixer.init() #Initialize Mixer
@@ -78,8 +78,9 @@ class WavePlayer:
         #print(json.dumps(audios, indent = 4))
         pygame.mixer.set_num_channels(3)
         channel = pygame.mixer.Channel(2)
+        i = 0
         for entry in audios.keys():
-            #print "Try to add", entry,"file:", audios[entry][0] ,"in channels:", audios[entry][1]
+            print ("Try to add(",i,")", entry,"file:", audios[entry][0])
             audio = pygame.mixer.Sound(audios[entry][0])
             audio.set_volume(1.0)
             self.channelsInstances.update({entry:[audio,channel]})
@@ -286,12 +287,12 @@ try:
         stamp = time.time()
 
         get_arduino_response()                   # If data available from arduino, retrieve into "line"
-        if line_len == 6:
+        if line_len == 10:
             #print("Line:",line)
-            if line == "000000":    # Ensure entire line came through 
+            if line == "0000000000":    # Ensure entire line came through 
                 if not (prev == line):  
                     audioPlayer.stop()
-            elif line == "000001":    # Ensure entire line came through 
+            elif line == "0000000001":    # Ensure entire line came through 
                 if not (prev == line):
                     audioPlayer.enableLoop()
                     audioPlayer.play("freeLine")

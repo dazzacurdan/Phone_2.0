@@ -16,8 +16,8 @@ int dialHasFinishedRotatingAfterMs = 100;
 int debounceDelay = 16;
 //int debounceDelay = 10;
 
-int numberLength = 6;
-//int numberLength = 10;
+//int numberLength = 6;
+int numberLength = 10;
 
 long lastDebounceTime = 0;
 long buttonDebounceDelay = 50;
@@ -91,8 +91,7 @@ void phone()
 void loop()
 {
    buttonState = digitalRead(buttonIn);
- 
-  
+
     if ( buttonState == HIGH) {
       printNoSound();
       targetProject = "";
