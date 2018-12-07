@@ -1,7 +1,7 @@
-023487,audio0,./audio/000.wav
-025672,audio1,./audio/001.wav
-022437,audio2,./audio/002.wav
-027652,audio3,./audio/003.wav
-028497,audio4,./audio/004.wav
-021012,audio5,./audio/005.wav
-022312,audio6,./audio/006.wav
+023487,000,./audio/000.wav
+025672,001,./audio/001.wav
+022437,002,./audio/002.wav
+027652,003,./audio/003.wav
+028497,004,./audio/004.wav
+021012,005,./audio/005.wav
+022312,006,./audio/006.wav

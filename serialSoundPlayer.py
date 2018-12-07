@@ -50,7 +50,7 @@ class WavePlayer:
         try:
             if not self.loop:
                 self.loop = True
-            print "Loop Enabled" 
+            print("Loop Enabled") 
         finally:
             self.lock.release()
     
@@ -59,7 +59,7 @@ class WavePlayer:
         try:
             if self.loop:
                 self.loop = False
-            print "Loop Disabled" 
+            print("Loop Disabled") 
         finally:
             self.lock.release()
 
@@ -68,12 +68,12 @@ class WavePlayer:
         try:
             if not self.stopPlaying:
                 self.stopPlaying = True
-            print "STOPPED" 
+            print ("STOPPED") 
         finally:
             self.lock.release()
     
     def addAudios(self,audios):
-        print "Audios are: ", len(audios)
+        print ("Audios are: ", len(audios))
         #print(json.dumps(audios, indent = 4))
         pygame.mixer.set_num_channels(3)
         channel = pygame.mixer.Channel(2)
@@ -84,7 +84,7 @@ class WavePlayer:
             self.channelsInstances.update({entry:[audio,channel]})
 
     def playAudio_t(self):
-        print "Audio thread started"
+        print ("Audio thread started")
 
         _stop = True
         _loop = False
@@ -117,7 +117,7 @@ class WavePlayer:
                                 self.lock.release()
                         self.channel.stop()
                 elif self.channel is not None and not _stop:
-                    print "Single Play"
+                    print ("Single Play")
                     self.channel.play(self.audio)
                     
                     while self.channel.get_busy() and (not _stop):
@@ -146,17 +146,17 @@ class WavePlayer:
         
         self.lock.acquire()
         try:
-            print "Key is:",key
+            print ("Key is:",key)
             ret = self.channelsInstances.get(key,None)
             self.channel = ret[1]
             self.audio = ret[0]
             self.stopPlaying = False
         finally:
             self.lock.release()
-        print "Play_t ", key,"stop:",self.stopPlaying
+        print ("Play_t ", key,"stop:",self.stopPlaying)
 
     def close(self):
-        print "Request thread to stop."
+        print ("Request thread to stop.")
         self.stop_event.set()
         self.stop()
         # Wait for thread to exit.
@@ -221,19 +221,19 @@ def get_arduino_response():
 # Main Loop
 port = initializeArduinoComunication()
 if port is None:
-    print "Arduino is not Connected"
+    print ("Arduino is not Connected")
     sys.exit(-1)
 else:
-    print "Arduino is connected at port:",port
+    print ("Arduino is connected at port:",port)
 try:
     arduino = serial.Serial(port,9600)#,serial.PARITY_NONE,serial.STOPBITS_ONE)#,serial.EIGHTBITS,1)
     parsingData = True
 except serial.SerialException as e0:
-    print "ERROR:", e0
+    print ("ERROR:", e0)
     arduino.close()
     pass
 except IOError as e1: # if port is already opened, close it and open it again and print message
-    print "ERROR:", e1
+    print ("ERROR:", e1)
     arduino.close()
     arduino.open()
     print ("port was already open, was closed and opened again!")
@@ -263,8 +263,8 @@ try:
 
     audioPlayer = WavePlayer()
     audioPlayer.addAudios(audios)
-    videoPlayer = VideoPlayer("192.168.1.3",5000)
-    videoPlayer.playVideo("Loop.mov")
+    #videoPlayer = VideoPlayer("192.168.1.3",5000)
+    #videoPlayer.playVideo("Loop.mov")
     
     while parsingData:                    # Continuous loop
         # os.system('clear')
@@ -293,5 +293,5 @@ try:
 except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
     arduino.close()
     audioPlayer.close()
-print "Done.\nExiting."
+print ("Done.\nExiting.")
 sys.exit(0)
