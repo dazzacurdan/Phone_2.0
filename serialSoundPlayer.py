@@ -9,6 +9,7 @@ import csv
 import sys
 import glob
 import argparse
+import os
 
 from pygame import mixer
 from pythonosc import osc_message_builder
@@ -192,30 +193,36 @@ def initializeArduinoComunication():
         :returns:
             A list of the serial ports available on the system
     """
+    pattern = ""
     if sys.platform.startswith('win'):
         ports = ['COM%s' % (i + 1) for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
         # this excludes your current terminal "/dev/tty"
         ports = glob.glob('/dev/tty[A-Za-z]*')
+        pattern = "ACM"
     elif sys.platform.startswith('darwin'):
         ports = glob.glob('/dev/tty.*')
+        pattern = "usbmodem"
     else:
         raise EnvironmentError('Unsupported platform')
 
     for port in ports:
-        if "usbmodem" in port:
+        if pattern in port:
             return port
     return None
 
 def get_arduino_response():
-   global line
-   global line_len
+    global line
+    global line_len
    
-   if (arduino.inWaiting() > 0):
-       line = arduino.readline()
-       line = line[:-2]
-       line_len = len(line)
-       #print 'Receiving: ', line,' size: ', line_len
+    if (arduino.inWaiting() > 0):
+        line = arduino.readline()
+        try:
+            line = (line[:-2]).decode("utf-8")
+        except:
+            print("Line:",line)
+        line_len = len(line)
+       #print ('Receiving: ', line,' size: ', line_len)
 
 ##########################################################################
 # Main Loop
@@ -240,8 +247,16 @@ except IOError as e1: # if port is already opened, close it and open it again an
 
 try:
 
-    audioPath = "./audio"
-    videoPath = "./video"
+    dirPrefix = ""
+    if sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        dirPrefix = "/home/pi/Phone_2.0"
+    elif sys.platform.startswith('darwin'):
+        dirPrefix = "."
+    
+    audioPath = dirPrefix+"/audio"
+    videoPath = dirPrefix+"/video"
+
+    print("Audio Path:",audioPath)
 
     audios = {
         "freeLine": [audioPath+"/freeLine.wav",0],
@@ -253,13 +268,13 @@ try:
     }
 
     numbers = dict()
-    with open(audioPath+"/numbers.csv", 'rb') as csvfile:
+    with open(audioPath+"/numbers.csv", 'r') as csvfile:
         audiosInfo = csv.reader(csvfile, delimiter=',', quotechar='|')
         for row in audiosInfo:
             numbers.update({row[0]:row[1]})
-            audios.update({row[1]:[row[2]]})
+            audios.update({row[1]:[audioPath+"/"+row[2]]})
             if len(row) is 4:
-                videos.update({row[1]:row[3]})
+                videos.update({row[1]:videoPath+"/"+row[3]})
 
     audioPlayer = WavePlayer()
     audioPlayer.addAudios(audios)
@@ -271,24 +286,25 @@ try:
         stamp = time.time()
 
         get_arduino_response()                   # If data available from arduino, retrieve into "line"
-
-        if line == "000000" and line_len == 6:    # Ensure entire line came through 
-            if not (prev == line):  
-                audioPlayer.stop()
-        elif line == "000001" and line_len == 6:    # Ensure entire line came through 
-            if not (prev == line):
-                audioPlayer.enableLoop()
-                audioPlayer.play("freeLine")
-        elif line_len == 6:
-            if not (prev == line):
-                ret = numbers.get(line,None)
-                if ret is not None:
-                    audioPlayer.disableLoop()
-                    audioPlayer.play(ret)
-                else:
+        if line_len == 6:
+            #print("Line:",line)
+            if line == "000000":    # Ensure entire line came through 
+                if not (prev == line):  
+                    audioPlayer.stop()
+            elif line == "000001":    # Ensure entire line came through 
+                if not (prev == line):
                     audioPlayer.enableLoop()
-                    audioPlayer.play("wrongLine")
-        prev = line
+                    audioPlayer.play("freeLine")
+            else:
+                if not (prev == line):
+                    ret = numbers.get(line,None)
+                    if ret is not None:
+                        audioPlayer.disableLoop()
+                        audioPlayer.play(ret)
+                    else:
+                        audioPlayer.enableLoop()
+                        audioPlayer.play("wrongLine")
+            prev = line
 
 except (KeyboardInterrupt, SystemExit): #when you press ctrl+c
     arduino.close()
